@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
+"""step3_period_prediction.ipynb
 
 ### Final Prediction. To support decision making.
 
 Firstly, necessary libraries need to be imported as follows
 
+---
 """
 
 import numpy as np
@@ -77,7 +78,7 @@ for f in files:
   os.remove(f)
 
 # To read the input image, a part of estampage containing a few letters and call the segment function
-img = cv2.imread("/content/drive/MyDrive/classification_of_inscriptions_periods/step3_prediction/images/insc_images_test/inscription_wise/ltr_trns_k1.jpg")
+img = cv2.imread("/content/drive/MyDrive/classification_of_inscriptions_periods/step3_prediction/images/insc_images_test/inscription_wise/5_nilagama_rock.jpg")
 segment(img)
 
 """The Pre-processing function as follows. The function is a bit similar to the pre-processing function in first step. But in here, output images are letters fitted in 128x128 squared boxes, since the input size of the trained model is 128x128"""
@@ -269,23 +270,28 @@ def final_predict():
         
         percMajor = round(((output[0]*100)/(output[0]+output[2])), 2)
         percMinor = round(((output[2]*100)/(output[0]+output[2])), 2)
-        
-        print(output[1], "->", percMajor, "%")
-        print(output[3],"->", percMinor, "%")
 
-        print()
+        if percMajor < 85:
 
-        y = [output[3], output[1]]
-        x = [percMinor, percMajor]
+          print(percMajor, "% of letters :", output[1])
+          print(percMinor, "% of letters :", output[3])
 
-        plt.figure(figsize=(5,1))
-        plt.xlim([0, 100])
-        plt.barh(y, x, height=0.7)
-        #plt.xlabel("Percentage")
-        plt.show()
+          print()
+
+          y = [output[3], output[1]]
+          x = [percMinor, percMajor]
+
+          plt.figure(figsize=(5,1))
+          plt.xlim([0, 100])
+          plt.barh(y, x, height=0.7)
+          #plt.xlabel("Percentage")
+          plt.show()
+
+        else:
+          print(output[1])
 
       else:
-        print(output[1], "->", 100, "%")
+        print(output[1])
 
       
 final_predict()   # Calling the prediction function

@@ -78,7 +78,7 @@ for f in files:
   os.remove(f)
 
 # To read the input image, a part of estampage containing a few letters and call the segment function
-img = cv2.imread("/content/drive/MyDrive/classification_of_inscriptions_periods/step3_prediction/images/insc_images_test/inscription_wise/5_nilagama_rock.jpg")
+img = cv2.imread("/content/drive/MyDrive/classification_of_inscriptions_periods/step3_prediction/images/insc_images_test/inscription_wise/eb11.jpg")
 segment(img)
 
 """The Pre-processing function as follows. The function is a bit similar to the pre-processing function in first step. But in here, output images are letters fitted in 128x128 squared boxes, since the input size of the trained model is 128x128"""
@@ -245,53 +245,68 @@ def final_predict():
 
   output = []
 
-  for i in range(2):
-    if top_list[i] > 0:
-      if top_list[i] == eb_cnt:
-        output += [top_list[i]]
-        output += ["Early Brahmi Period"]
-      elif top_list[i] == lb_cnt:
-        output += [top_list[i]]
-        output += ["Later Brahmi Period"]
-      elif top_list[i] == tr_cnt:
-        output += [top_list[i]]
-        output += ["Transitional Brahmi Period"]
-      elif top_list[i] == mdv_cnt:
-        output += [top_list[i]]
-        output += ["Medieval Sinhala Period"]
-      elif top_list[i] == mdn_cnt:
-        output += [top_list[i]]
-        output += ["Modern Sinhala Period"]
+  if top_list[1] == 0:
 
-    if len(output) > 2:
+    if top_list[0] == eb_cnt:
+      print("Early Brahmi Period")
+    elif top_list[0] == lb_cnt:
+      print("Later Brahmi Period")
+    elif top_list[0] == tr_cnt:
+      print("Transitional Brahmi Period")
+    elif top_list[0] == mdv_cnt:
+      print("Medieval Sinhala Period")
+    elif top_list[0] == mdn_cnt:
+      print("Modern Sinhala Period")
 
-    # Verify the second period is consecutive. If so, print the percentages
-      if (output[1] == "Early Brahmi Period" and output[3] == "Later Brahmi Period") or (output[1] == "Later Brahmi Period" and (output[3] == "Early Brahmi Period" or output[3] == "Transitional Brahmi Period")) or (output[1] == "Transitional Brahmi Period" and (output[3] == "Later Brahmi Period" or output[3] == "Medieval Sinhala Period")) or (output[1] == "Medieval Sinhala Period" and (output[3] == "Transitional Brahmi Period" or output[3] == "Modern Sinhala Period")) or (output[1] == "Modern Sinhala Period" and output[3] == "Medieval Sinhala Period"):
+  else:
+
+    for i in range(2):
+      if top_list[i] > 0:
+        if top_list[i] == eb_cnt:
+          output += [top_list[i]]
+          output += ["Early Brahmi Period"]
+        elif top_list[i] == lb_cnt:
+          output += [top_list[i]]
+          output += ["Later Brahmi Period"]
+        elif top_list[i] == tr_cnt:
+          output += [top_list[i]]
+          output += ["Transitional Brahmi Period"]
+        elif top_list[i] == mdv_cnt:
+          output += [top_list[i]]
+          output += ["Medieval Sinhala Period"]
+        elif top_list[i] == mdn_cnt:
+          output += [top_list[i]]
+          output += ["Modern Sinhala Period"]
+
+      if len(output) > 2:
+
+      # Verify the second period is consecutive. If so, print the percentages
+        if (output[1] == "Early Brahmi Period" and output[3] == "Later Brahmi Period") or (output[1] == "Later Brahmi Period" and (output[3] == "Early Brahmi Period" or output[3] == "Transitional Brahmi Period")) or (output[1] == "Transitional Brahmi Period" and (output[3] == "Later Brahmi Period" or output[3] == "Medieval Sinhala Period")) or (output[1] == "Medieval Sinhala Period" and (output[3] == "Transitional Brahmi Period" or output[3] == "Modern Sinhala Period")) or (output[1] == "Modern Sinhala Period" and output[3] == "Medieval Sinhala Period"):
         
-        percMajor = round(((output[0]*100)/(output[0]+output[2])), 2)
-        percMinor = round(((output[2]*100)/(output[0]+output[2])), 2)
+          percMajor = round(((output[0]*100)/(output[0]+output[2])), 2)
+          percMinor = round(((output[2]*100)/(output[0]+output[2])), 2)
 
-        if percMajor < 85:
+          if percMajor < 85:
 
-          print(percMajor, "% of letters :", output[1])
-          print(percMinor, "% of letters :", output[3])
+            print(percMajor, "% of letters :", output[1])
+            print(percMinor, "% of letters :", output[3])
 
-          print()
+            print()
 
-          y = [output[3], output[1]]
-          x = [percMinor, percMajor]
+            y = [output[3], output[1]]
+            x = [percMinor, percMajor]
 
-          plt.figure(figsize=(5,1))
-          plt.xlim([0, 100])
-          plt.barh(y, x, height=0.7)
-          #plt.xlabel("Percentage")
-          plt.show()
+            plt.figure(figsize=(5,1))
+            plt.xlim([0, 100])
+            plt.barh(y, x, height=0.7)
+            #plt.xlabel("Percentage")
+            plt.show()
+
+          else:
+            print(output[1])
 
         else:
           print(output[1])
-
-      else:
-        print(output[1])
 
       
 final_predict()   # Calling the prediction function

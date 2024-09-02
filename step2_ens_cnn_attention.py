@@ -6,15 +6,13 @@ if device_name != '/device:GPU:0':
 print('Found GPU at: {}'.format(device_name))
 
 import numpy as np
-import tensorflow as tf
 import random as python_random
 import keras
 import matplotlib.pyplot as plt
 import os
-from tensorflow.keras.layers.experimental import preprocessing
-from keras.models import Sequential, Model
-from keras.preprocessing.image import ImageDataGenerator, load_img
-from keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, Input, Average
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img
+from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D, GlobalAveragePooling2D, BatchNormalization, Input, Average
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
@@ -22,25 +20,24 @@ from sklearn.model_selection import StratifiedKFold
 from tensorflow.keras.applications import VGG16, Xception
 from tensorflow.keras.applications import ConvNeXtBase
 from tensorflow.keras import layers
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, LearningRateScheduler
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, LearningRateScheduler
 import time
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-from keras import models
+from tensorflow.keras import models
 import h5py
-from keras import metrics
+from tensorflow.keras import metrics
 import pandas as pd
 from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras.optimizers.schedules import ExponentialDecay
+from tensorflow.keras.optimizers.schedules import ExponentialDecay, CosineDecay
 from sklearn.metrics import classification_report
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.metrics import accuracy_score
 from tensorflow.keras.optimizers import schedules
-from tensorflow.keras.experimental import CosineDecay
-from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, Reshape, Dense, multiply, Permute, Concatenate, Conv2D, Add, Activation, Lambda
-from keras import backend as K
+from tensorflow.keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, Reshape, Dense, multiply, Permute, Concatenate, Conv2D, Add, Activation, Lambda
+from tensorflow.keras import backend as K
 from collections import Counter
-import cv2  
+import cv2
 
 from google.colab import drive
 drive.mount('/content/drive')
@@ -135,6 +132,12 @@ def create_vgg16_model():
     vgg_output = channel_attention(vgg_output)
     vgg_output = spatial_attention(vgg_output)
     vgg_output = GlobalAveragePooling2D()(vgg_output)
+
+    vgg_output = layers.Dropout(0.4)(vgg_output)
+    vgg_output = layers.Dense(256, activation="relu")(vgg_output)
+    vgg_output = layers.Dropout(0.3)(vgg_output)
+    vgg_output = layers.Dense(128, activation="relu")(vgg_output)
+    vgg_output = layers.Dropout(0.3)(vgg_output)
     vgg_output = Dense(5, activation='softmax', name='vgg_output')(vgg_output)
 
     vgg_model = Model(inputs=vgg_input, outputs=vgg_output)
@@ -154,6 +157,12 @@ def create_xception_model():
     xception_output = channel_attention(xception_output)
     xception_output = spatial_attention(xception_output)
     xception_output = GlobalAveragePooling2D()(xception_output)
+
+    xception_output = layers.Dropout(0.4)(xception_output)
+    xception_output = layers.Dense(256, activation="relu")(xception_output)
+    xception_output = layers.Dropout(0.3)(xception_output)
+    xception_output = layers.Dense(128, activation="relu")(xception_output)
+    xception_output = layers.Dropout(0.3)(xception_output)
     xception_output = Dense(5, activation='softmax', name='xception_output')(xception_output)
 
     xception_model = Model(inputs=xception_input, outputs=xception_output)
@@ -173,6 +182,12 @@ def create_convnext_model():
     convnext_output = channel_attention(convnext_output)
     convnext_output = spatial_attention(convnext_output)
     convnext_output = GlobalAveragePooling2D()(convnext_output)
+
+    convnext_output = layers.Dropout(0.4)(convnext_output)
+    convnext_output = layers.Dense(256, activation="relu")(convnext_output)
+    convnext_output = layers.Dropout(0.3)(convnext_output)
+    convnext_output = layers.Dense(128, activation="relu")(convnext_output)
+    convnext_output = layers.Dropout(0.3)(convnext_output)
     convnext_output = Dense(5, activation='softmax', name='convnext_output')(convnext_output)
 
     convnext_model = Model(inputs=convnext_input, outputs=convnext_output)
@@ -199,7 +214,7 @@ def evaluate_ensemble(models, seg_test_folders):
         test_image_ids = os.listdir(os.path.join(seg_test_folders, folder))
         for image_id in test_image_ids[:int(len(test_image_ids))]:
             path = os.path.join(seg_test_folders, folder, image_id)
-            true_value.append(test_set.class_indices[folder])  
+            true_value.append(test_set.class_indices[folder])
             img = cv2.resize(cv2.imread(path), (128, 128))
             img_normalized = img / 255
 
@@ -216,8 +231,8 @@ def unfreeze_model(model, num_of_layers):
 
 batchSize = 32
 image_size = 128
-train_path = '/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/dataset_update_22.06.17/character_eras/train'
-test_path = '/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/dataset_update_22.06.17/character_eras/test'
+train_path = '/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/character_eras/train'
+test_path = '/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/character_eras/test'
 train_set, validation_set, test_set = set_data(train_path, test_path, batchSize, image_size)
 
 initial_learning_rate = 0.0002
@@ -241,9 +256,9 @@ xception_model = create_xception_model()
 convnext_model = create_convnext_model()
 
 # Set paths for saving model weights
-vgg16_weights_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/dataset_update_22.06.17/thinning/medial_axis/cnn_single/comparison/ensemble/vgg16_weights.hdf5"
-xception_weights_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/dataset_update_22.06.17/thinning/medial_axis/cnn_single/comparison/ensemble/xception_weights.hdf5"
-convnext_weights_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/dataset_update_22.06.17/thinning/medial_axis/cnn_single/comparison/ensemble/convnext_weights.hdf5"
+vgg16_weights_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/vgg16_weights.weights.h5"
+xception_weights_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/xception_weights.weights.h5"
+convnext_weights_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/convnext_weights.weights.h5"
 
 # Train individual models
 vgg16_history = vgg16_model.fit(
@@ -333,15 +348,14 @@ plt.tight_layout()
 plt.show()
 
 # Save individual models
-vgg16_model_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/dataset_update_22.06.17/thinning/medial_axis/cnn_single/comparison/ensemble/model/vgg16_model"
-xception_model_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/dataset_update_22.06.17/thinning/medial_axis/cnn_single/comparison/ensemble/model/xception_model"
-convnext_model_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/dataset_update_22.06.17/thinning/medial_axis/cnn_single/comparison/ensemble/model/convnext_model"
+vgg16_model_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/vgg16_model"
+xception_model_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/xception_model"
+convnext_model_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/convnext_model"
 
 tf.keras.models.save_model(vgg16_model, vgg16_model_path)
 tf.keras.models.save_model(xception_model, xception_model_path)
 tf.keras.models.save_model(convnext_model, convnext_model_path)
 
 # Save ensemble model
-ensemble_model_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/dataset_update_22.06.17/thinning/medial_axis/cnn_single/comparison/ensemble/model/ens_model"
+ensemble_model_path = "/content/drive/MyDrive/classification_of_inscriptions_periods/step2_training/ens_model"
 tf.keras.models.save_model(ensemble_model, ensemble_model_path)
-
